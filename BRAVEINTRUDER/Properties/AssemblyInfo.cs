@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Concordia Funds Secure Downloader")]
-[assembly: AssemblyDescription("Concordia Funds Secure Downloader")]
+[assembly: AssemblyTitle("Secure Downloader")]
+[assembly: AssemblyDescription("Secure Downloader")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Concordia Funds")]
-[assembly: AssemblyProduct("Concordia Funds Secure Downloader")]
+[assembly: AssemblyProduct("Secure Downloader")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
